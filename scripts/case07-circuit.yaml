@@ -1,0 +1,39 @@
+1. 安装httpbin服务作为服务端
+kubectl apply -f samples/httpbin/httpbin.yaml
+
+2.在服务的 DestinationRule 中添加熔断设置
+---
+kubectl apply -f - <<EOF
+apiVersion: networking.istio.io/v1alpha3
+kind: DestinationRule
+metadata:
+  name: httpbin
+spec:
+  host: httpbin
+  trafficPolicy:
+    connectionPool:
+      tcp:
+        maxConnections: 1
+      http:
+        http1MaxPendingRequests: 1
+        maxRequestsPerConnection: 1
+    outlierDetection:
+      consecutiveErrors: 1
+      interval: 1s
+      baseEjectionTime: 3m
+      maxEjectionPercent: 100
+EOF
+---
+3.使用负载测试工具触发熔断,安装fortio：
+kubectl apply -f samples/httpbin/sample-client/fortio-deploy.yaml
+
+4. 验证请求
+k exec -it fortio-deploy-6dc9b4d7d9-jgnbc -c fortio -- /usr/bin/fortio curl -quiet http://httpbin:8000/get
+
+5. 触发熔断
+k exec -it fortio-deploy-6dc9b4d7d9-jgnbc -c fortio -- /usr/bin/fortio load -c 2 -qps 0 -n 20 -loglevel Warning http://httpbin:8000/get
+增大负载
+-c fortio -- /usr/bin/fortio load -c 3 -qps 0 -n 30 -loglevel Warning http://httpbin:8000/get
+
+6. 查看日志验证
+k exec -it fortio-deploy-6dc9b4d7d9-jgnbc -c istio-proxy -- pilot-agent request GET stats | grep httpbin | grep pending

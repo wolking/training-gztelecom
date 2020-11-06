@@ -1,0 +1,24 @@
+1. 安装sleep服务
+samples/sleep/sleep.yaml
+
+2. 关闭对外访问
+istioctl install --set meshConfig.outboundTrafficPolicy.mode=REGISTRY_ONLY
+
+3. 测试
+curl -sI  http://httpbin.org/ip
+
+4. 添加serviceEntry
+---
+apiVersion: networking.istio.io/v1alpha3
+kind: ServiceEntry
+metadata:
+  name: httpbin-ext
+spec:
+  hosts:
+  - httpbin.org
+  ports:
+  - number: 80
+    name: http
+    protocol: HTTP
+  resolution: DNS
+  location: MESH_EXTERNAL

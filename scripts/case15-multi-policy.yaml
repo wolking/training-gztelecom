@@ -1,0 +1,85 @@
+1. 创建授权 - 特定服务，注意没有rule，表示deny当前服务
+
+kubectl apply -f - <<EOF
+apiVersion: security.istio.io/v1beta1
+kind: AuthorizationPolicy
+metadata:
+  name: httpbin
+  namespace: default
+spec:
+  selector:
+    matchLabels:
+      app: httpbin
+EOF
+测试连通性: sleep无法访问httpbin
+
+2. 来源必须是default ns
+k apply -f - <<EOF
+apiVersion: security.istio.io/v1beta1
+kind: AuthorizationPolicy
+metadata:
+ name: httpbin
+ namespace: default
+spec:
+ action: ALLOW
+ rules:
+ - from:
+   - source:
+       principals: ["cluster.local/ns/testauth/sa/sleep"]
+   - source:
+       namespaces: ["testauth"]
+EOF
+
+测试：default sleep可以访问，testauth 无法访问
+修改service account 为testauth, 通过
+
+
+3. 只容许特定接口
+kubectl apply -f - <<EOF
+apiVersion: security.istio.io/v1beta1
+kind: AuthorizationPolicy
+metadata:
+ name: httpbin
+ namespace: default
+spec:
+ action: ALLOW
+ rules:
+ - from:
+   - source:
+       principals: ["cluster.local/ns/default/sa/sleep"]
+   - source:
+       namespaces: ["default"]
+   to:
+   - operation:
+       methods: ["GET"]
+       paths: ["/get"]
+EOF
+测试：get接口可访问，ip接口不能
+
+
+4. 其他特定条件 - 请求头
+kubectl apply -f - <<EOF
+apiVersion: security.istio.io/v1beta1
+kind: AuthorizationPolicy
+metadata:
+ name: httpbin
+ namespace: default
+spec:
+ action: ALLOW
+ rules:
+ - from:
+   - source:
+       principals: ["cluster.local/ns/default/sa/sleep"]
+   - source:
+       namespaces: ["default"]
+   to:
+   - operation:
+       methods: ["GET"]
+       paths: ["/get"]
+   when:
+   - key: request.headers[x-rfma-token]
+     values: ["test*"]
+EOF
+
+测试：不通过
+加token通过：curl "http://httpbin.demo:8000/get" -H x-rfma-token:test1

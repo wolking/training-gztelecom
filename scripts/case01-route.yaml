@@ -1,0 +1,25 @@
+k apply -f samples/bookinfo/networking/virtual-service-all-v1.yaml
+
+练习：
+将Chrome浏览器的请求路由到reviews的v2版本(通过match header的User-Agent实现)
+---
+apiVersion: networking.istio.io/v1alpha3
+kind: VirtualService
+metadata:
+  name: reviews
+spec:
+  hosts:
+  - reviews
+  http:
+  - match:
+    - headers:
+        User-Agent:
+          regex: ".*Chrome.*"
+    route:
+    - destination:
+        host: reviews
+        subset: v1
+  - route:
+    - destination:
+        host: reviews
+        subset: v2

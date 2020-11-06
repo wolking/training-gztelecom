@@ -1,0 +1,21 @@
+安装addon:
+kubectl apply -f samples/addons -n istio-system
+kubectl apply -f samples/addons/prometheus.yaml -n istio-system
+
+kiali 登录问题:
+1. 新建secret：
+kubectl create secret generic kiali -n istio-system --from-literal=username=admin --from-literal=passphrase=admin
+2. 删除老pod
+
+安装bookinfo：
+1. 注入：
+kubectl label namespace default istio-injection=enabled
+2. 部署：
+kubectl apply -f samples/bookinfo/platform/kube/bookinfo.yaml
+
+3. istio配置：
+kubectl apply -f samples/bookinfo/networking/bookinfo-gateway.yaml
+kubectl apply -f samples/bookinfo/networking/destination-rule-all.yaml
+
+
+

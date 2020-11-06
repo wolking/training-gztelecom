@@ -1,0 +1,8 @@
+1. 先保证dr存在
+samples/bookinfo/networking/destination-rule-all.yaml
+
+2. 添加vs
+samples/bookinfo/networking/virtual-service-all-v1.yaml
+
+3. 50%请求转到reviews v3
+samples/bookinfo/networking/virtual-service-reviews-50-v3.yaml
